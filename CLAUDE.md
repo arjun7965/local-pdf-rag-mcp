@@ -55,7 +55,9 @@ These were settled with the user — do not relitigate without asking:
 - All four modules compile cleanly and the chunker is tested (see below).
 - NOT yet run end-to-end with the real ChromaDB / sentence-transformers / mcp
   stack — those pull large models and weren't installed in the build env.
-- Not yet a git repo / not yet pushed to GitHub.
+- Git repo initialized with an initial commit on `main`. Remote
+  https://github.com/arjun7965/local-pdf-rag-mcp exists but nothing has been
+  pushed yet.
 
 ## What's been verified
 
@@ -82,11 +84,11 @@ These were settled with the user — do not relitigate without asking:
 Immediate (before publishing):
 1. **Smoke test on a real machine:** `pip install -e .`, ingest any PDF,
    confirm `search` returns sensible chunks. This is the main untested path.
-2. Swap the `YOUR_USERNAME` placeholder in README's clone URL.
-3. Confirm the copyright name in `LICENSE` (currently "Arjun").
-4. `git init && git add . && git commit`, create the empty GitHub repo, then
-   `git remote add origin ... && git push`. (User does the GitHub steps —
-   Claude does not create repos or push on the user's behalf.)
+2. **Add the remote and push to GitHub.** The repo at
+   https://github.com/arjun7965/local-pdf-rag-mcp is empty; run
+   `git remote add origin https://github.com/arjun7965/local-pdf-rag-mcp.git`
+   then `git push -u origin main`. User performs the push — Claude does not
+   push on the user's behalf without explicit per-session confirmation.
 
 Possible v2 (user was asked, hasn't decided):
 - **Reranking step** after vector search to improve precision before chunks go
