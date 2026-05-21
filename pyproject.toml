@@ -13,6 +13,12 @@ dependencies = [
     "pypdf>=4.0.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "reportlab>=4.0",
+]
+
 [project.scripts]
 local-pdf-rag-mcp = "local_pdf_rag_mcp.server:main"
 

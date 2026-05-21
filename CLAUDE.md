@@ -101,17 +101,17 @@ Possible v2 (user was asked, hasn't decided):
 
 ## Testing notes
 
-Quick chunker regression check (no heavy deps needed beyond `pypdf` +
-`reportlab` to synthesize a test PDF):
+Chunker tests live in `tests/test_chunking.py`. They cover the token-budget
+regression across multiple target sizes plus the edge cases listed under
+"What's been verified" (blank pages, tiny doc, page-number range, no-text
+PDFs). Synthesize PDFs via `reportlab` so there are no binary fixtures in
+the repo.
 
-```python
-from pathlib import Path
-from local_pdf_rag_mcp.chunking import extract_pages, chunk_pages
-pages = extract_pages(Path("some.pdf"))
-for target in (80, 120, 200, 350):
-    chunks = chunk_pages(pages, source="some.pdf",
-                         target_tokens=target, overlap_tokens=target // 4)
-    sizes = [len(c.text) // 4 for c in chunks]
-    assert max(sizes) <= target * 1.4, f"over budget at {target}: {max(sizes)}"
-    assert all(c.text.strip() for c in chunks)
+To run:
+
+```bash
+pip install -e ".[dev]"
+pytest
 ```
+
+If you touch chunking, this is the suite to re-run.
