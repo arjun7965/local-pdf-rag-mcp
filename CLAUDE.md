@@ -52,12 +52,11 @@ These were settled with the user — do not relitigate without asking:
 
 ## Current state
 
-- All four modules compile cleanly and the chunker is tested (see below).
+- All modules compile cleanly; chunker has a pytest suite (see "Testing notes").
 - NOT yet run end-to-end with the real ChromaDB / sentence-transformers / mcp
   stack — those pull large models and weren't installed in the build env.
-- Git repo initialized with an initial commit on `main`. Remote
-  https://github.com/arjun7965/local-pdf-rag-mcp exists but nothing has been
-  pushed yet.
+- Published at https://github.com/arjun7965/local-pdf-rag-mcp; `main` tracks
+  `origin/main`.
 
 ## What's been verified
 
@@ -81,14 +80,11 @@ These were settled with the user — do not relitigate without asking:
 
 ## Next steps / open questions
 
-Immediate (before publishing):
+Immediate:
 1. **Smoke test on a real machine:** `pip install -e .`, ingest any PDF,
-   confirm `search` returns sensible chunks. This is the main untested path.
-2. **Add the remote and push to GitHub.** The repo at
-   https://github.com/arjun7965/local-pdf-rag-mcp is empty; run
-   `git remote add origin https://github.com/arjun7965/local-pdf-rag-mcp.git`
-   then `git push -u origin main`. User performs the push — Claude does not
-   push on the user's behalf without explicit per-session confirmation.
+   confirm `search` returns sensible chunks. This is the main untested path —
+   the unit tests cover chunking but not the full ChromaDB / embeddings / MCP
+   stack.
 
 Possible v2 (user was asked, hasn't decided):
 - **Reranking step** after vector search to improve precision before chunks go
