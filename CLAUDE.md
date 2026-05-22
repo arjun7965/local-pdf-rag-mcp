@@ -77,6 +77,16 @@ These were settled with the user — do not relitigate without asking:
   chunking, re-run the budget test across multiple target sizes.
 - Token counting is a `~4 chars/token` approximation to avoid a tokenizer
   dependency. Allow ~1.4x overshoot when asserting budgets.
+- **Chunk size is coupled to the embedding model's `max_seq_length`.**
+  sentence-transformers silently truncates inputs above that limit, so a
+  chunk longer than the model can ingest gets its tail dropped from the
+  embedding (the text is still stored and returned — only the vector is
+  short, so queries that should match the tail won't retrieve the chunk).
+  MiniLM caps at 256 tokens, but the chunker's `target_tokens` default is
+  currently 350 — full-sized chunks lose their tails at embed time. Open
+  question: lower the default to ~250 to fit MiniLM cleanly, or leave it
+  and accept the truncation as a tunable. If you swap the embedding model,
+  retune `target_tokens` to the new model's window.
 
 ## Next steps / open questions
 

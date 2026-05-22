@@ -89,11 +89,40 @@ Environment variables:
 | `PDF_RAG_EMBED_MODEL` | `all-MiniLM-L6-v2` | Any sentence-transformers model name. |
 | `PDF_RAG_DB_PATH` | `~/.local_pdf_rag_mcp/chroma` | Where the vector store lives on disk. |
 
+### Embedding model
+
+The default is `all-MiniLM-L6-v2` and the rest of the project is tuned
+around it:
+
+- **Why this model.** Small (~80 MB), fast on CPU, no GPU required, decent
+  general-English retrieval quality, Apache-2.0 licensed. Standard default
+  in the sentence-transformers ecosystem.
+- **Input limit: 256 tokens.** sentence-transformers silently truncates
+  inputs above the model's `max_seq_length`. Chunks are sized to stay
+  within this window so the embedding reflects the whole chunk, not just
+  its head. If you swap in a model with a different limit (e.g.
+  `BAAI/bge-large-en-v1.5` at 512), consider raising `target_tokens` in
+  `chunk_pages` to match — otherwise you're paying for capacity you don't
+  use.
+- **Swapping.** Any sentence-transformers model from HuggingFace works:
+  ```bash
+  PDF_RAG_EMBED_MODEL=BAAI/bge-large-en-v1.5 local-pdf-rag-mcp
+  ```
+  Larger models (BGE-large, E5-large) improve retrieval quality at the
+  cost of more disk, more RAM, and slower embedding. Switching models
+  invalidates any existing vectors — delete `~/.local_pdf_rag_mcp/chroma`
+  and re-ingest.
+
 ## Limitations
 
 - **No OCR.** Scanned or image-only PDFs have no extractable text; the server
   detects this and returns a clear error rather than indexing nothing.
 - **Encrypted PDFs** open only if they use an empty password.
+- **Embedding input cap.** Chunks longer than the embedding model's
+  `max_seq_length` (256 tokens for the default MiniLM) are silently
+  truncated by sentence-transformers — the full text is still stored and
+  returned, but the vector reflects only the head. Keep `target_tokens`
+  aligned with whatever model you use.
 - Tuned for a single-machine, single-user workflow. For multi-user or
   very-large-scale deployments you'd swap ChromaDB for a hosted vector store.
 
