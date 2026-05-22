@@ -42,7 +42,7 @@ def _long_pages(n_pages: int = 3, paras_per_page: int = 6) -> list[str]:
     return ["\n\n".join([_PARA] * paras_per_page) for _ in range(n_pages)]
 
 
-@pytest.mark.parametrize("target", [80, 120, 200, 350])
+@pytest.mark.parametrize("target", [80, 120, 200, 250, 350])
 def test_chunk_pages_respects_token_budget(target: int) -> None:
     chunks = chunk_pages(
         _long_pages(),

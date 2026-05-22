@@ -81,11 +81,9 @@ These were settled with the user — do not relitigate without asking:
   sentence-transformers silently truncates inputs above that limit, so a
   chunk longer than the model can ingest gets its tail dropped from the
   embedding (the text is still stored and returned — only the vector is
-  short, so queries that should match the tail won't retrieve the chunk).
-  MiniLM caps at 256 tokens, but the chunker's `target_tokens` default is
-  currently 350 — full-sized chunks lose their tails at embed time. Open
-  question: lower the default to ~250 to fit MiniLM cleanly, or leave it
-  and accept the truncation as a tunable. If you swap the embedding model,
+  short, so queries that should match the tail wouldn't retrieve the chunk).
+  MiniLM caps at 256 tokens, so the chunker's `target_tokens` default is
+  set to 250 to sit just under that. If you swap the embedding model,
   retune `target_tokens` to the new model's window.
 
 ## Next steps / open questions

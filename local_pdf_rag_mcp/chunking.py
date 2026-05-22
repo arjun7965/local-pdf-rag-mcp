@@ -109,7 +109,7 @@ def _split_oversized(para: str, target_tokens: int) -> list[str]:
 def chunk_pages(
     pages: list[str],
     source: str,
-    target_tokens: int = 350,
+    target_tokens: int = 250,
     overlap_tokens: int = 60,
 ) -> list[Chunk]:
     """Pack page text into ~target_tokens chunks with overlap.
@@ -117,6 +117,11 @@ def chunk_pages(
     Paragraph boundaries are respected where possible. A chunk never spans
     pages so its page number stays unambiguous; this keeps citations honest
     at the cost of slightly smaller chunks near page breaks.
+
+    The default of 250 sits just under the 256-token max_seq_length of the
+    default embedding model (all-MiniLM-L6-v2). If you swap in a model with
+    a larger window, raise this to match — otherwise you're paying for
+    capacity you don't use.
     """
     chunks: list[Chunk] = []
     chunk_index = 0

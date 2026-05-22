@@ -18,7 +18,7 @@ questions in plain language, and the model fetches only the relevant passages
 ## How it works
 
 Ingestion (once per document) extracts the text page by page, splits it into
-overlapping ~350-token chunks that respect paragraph boundaries, embeds each
+overlapping ~250-token chunks that respect paragraph boundaries, embeds each
 chunk locally, and stores them in ChromaDB. At query time the server embeds
 your question, finds the closest chunks, and returns them. The model reads
 those chunks and writes the answer — the server deliberately does **not**
