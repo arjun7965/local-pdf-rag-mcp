@@ -79,7 +79,7 @@ calls them for you:
 | --- | --- |
 | `ingest_pdf(path, collection="default")` | Chunk + embed a PDF file, or every PDF in a folder, into a collection. |
 | `list_collections()` | Show indexed collections and their chunk counts. |
-| `search(query, collection="default", top_k=5)` | Return the most relevant chunks with citations. |
+| `search(query, collection="default", top_k=8)` | Return the most relevant chunks with citations. |
 
 ## Configuration
 

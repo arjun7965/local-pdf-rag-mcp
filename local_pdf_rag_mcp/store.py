@@ -94,7 +94,7 @@ class VectorStore:
         self,
         collection: str,
         query: str,
-        top_k: int = 5,
+        top_k: int = 8,
         candidates: int = 20,
     ) -> list[dict]:
         """Return the top_k most relevant chunks.

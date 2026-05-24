@@ -82,7 +82,7 @@ def list_collections() -> str:
 
 
 @mcp.tool()
-def search(query: str, collection: str = "default", top_k: int = 5) -> str:
+def search(query: str, collection: str = "default", top_k: int = 8) -> str:
     """Search a collection and return the most relevant chunks with citations.
 
     Returns raw passages for the model to read and synthesize an answer from.
@@ -91,7 +91,9 @@ def search(query: str, collection: str = "default", top_k: int = 5) -> str:
     Args:
         query: The question or search phrase.
         collection: Which collection to search.
-        top_k: How many chunks to return (keep small to stay token-cheap).
+        top_k: How many chunks to return. Default 8 gives the model enough
+            coverage for multi-faceted questions while staying token-cheap;
+            the reranker still pulls from ~20 candidates regardless.
     """
     hits = _store.search(collection, query, top_k=top_k)
     if not hits:
