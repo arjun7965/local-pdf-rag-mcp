@@ -20,9 +20,10 @@ questions in plain language, and the model fetches only the relevant passages
 Ingestion (once per document) extracts the text page by page, splits it into
 overlapping ~250-token chunks that respect paragraph boundaries, embeds each
 chunk locally, and stores them in ChromaDB. At query time the server embeds
-your question, finds the closest chunks, and returns them. The model reads
-those chunks and writes the answer — the server deliberately does **not**
-generate answers itself, which keeps it simple and model-agnostic.
+your question, pulls the top ~20 chunks from vector search, then reranks
+them with a local cross-encoder so the most relevant ones surface first.
+The model reads those chunks and writes the answer — the server deliberately
+does **not** generate answers itself, which keeps it simple and model-agnostic.
 
 ## Requirements
 
@@ -87,6 +88,8 @@ Environment variables:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `PDF_RAG_EMBED_MODEL` | `all-MiniLM-L6-v2` | Any sentence-transformers model name. |
+| `PDF_RAG_RERANK_MODEL` | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder used to rerank vector hits. |
+| `PDF_RAG_RERANK` | `1` | Set to `0` to skip reranking and use raw vector ranking. |
 | `PDF_RAG_DB_PATH` | `~/.local_pdf_rag_mcp/chroma` | Where the vector store lives on disk. |
 
 ### Embedding model

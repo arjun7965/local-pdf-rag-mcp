@@ -40,7 +40,11 @@ These were settled with the user — do not relitigate without asking:
   "Known gotchas").
 - `local_pdf_rag_mcp/store.py` — `VectorStore`, a thin wrapper over a persistent
   ChromaDB client with a local embedding function. Handles add/search/list and
-  batches inserts (256) to bound memory on large docs.
+  batches inserts (256) to bound memory on large docs. `search` over-fetches
+  candidates (default 20) and runs a cross-encoder reranker
+  (`cross-encoder/ms-marco-MiniLM-L-6-v2`) over them to improve precision
+  before returning top_k. The reranker is lazy-loaded on first search and
+  can be disabled via `PDF_RAG_RERANK=0`.
 - `local_pdf_rag_mcp/server.py` — the FastMCP server. Three tools:
   - `ingest_pdf(path, collection="default")` — file or folder of PDFs.
   - `list_collections()` — names + chunk counts.
@@ -95,8 +99,6 @@ Immediate:
    stack.
 
 Possible v2 (user was asked, hasn't decided):
-- **Reranking step** after vector search to improve precision before chunks go
-  to the model.
 - **Table-aware extraction.** Current chunking flattens tables and register
   layouts into plain text — fine for prose, lossy for dense technical specs
   like PCIe. Real table-structure extraction needs a heavier parser. Document
