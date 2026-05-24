@@ -154,3 +154,12 @@ class VectorStore:
             )
             result.append({"name": col.name, "chunks": c.count()})
         return result
+
+    def delete_collection(self, name: str) -> bool:
+        """Delete a collection and all its chunks. Returns False if it
+        didn't exist; lets any other failure propagate as a real error."""
+        existing = {c.name for c in self.client.list_collections()}
+        if name not in existing:
+            return False
+        self.client.delete_collection(name=name)
+        return True

@@ -47,11 +47,13 @@ These were settled with the user — do not relitigate without asking:
   (`cross-encoder/ms-marco-MiniLM-L-6-v2`) over them to improve precision
   before returning top_k. The reranker is lazy-loaded on first search and
   can be disabled via `PDF_RAG_RERANK=0`.
-- `local_pdf_rag_mcp/server.py` — the FastMCP server. Three tools:
+- `local_pdf_rag_mcp/server.py` — the FastMCP server. Four tools:
   - `ingest_pdf(path, collection="default")` — file or folder of PDFs.
   - `list_collections()` — names + chunk counts.
   - `search(query, collection="default", top_k=8)` — top chunks with
     `source, p.N` citations (reranked from ~20 candidates).
+  - `delete_collection(collection)` — drop one collection + its chunks
+    (irreversible); for rebuilding a single collection without wiping others.
 - `pyproject.toml` — pinned deps (`mcp`, `chromadb`, `sentence-transformers`,
   `pdfplumber`); console entry point `local-pdf-rag-mcp = local_pdf_rag_mcp.server:main`.
 - `README.md`, `LICENSE` (MIT), `.gitignore`.
@@ -103,10 +105,12 @@ new parser, a different `target_tokens`, or a swapped embedding model only
 affects *future* ingests. To benefit from such a change you must rebuild
 the affected collections.
 
-- **Wiping the store.** There is no per-collection delete tool yet, so a
-  clean rebuild means removing the whole on-disk store:
-  `Remove-Item -Recurse $env:USERPROFILE\.local_pdf_rag_mcp` (PowerShell)
-  or `rm -rf ~/.local_pdf_rag_mcp` (bash). Then re-ingest.
+- **Rebuilding one collection.** Use the `delete_collection` tool to drop
+  just that collection, then re-ingest its PDF. Leaves other collections
+  intact.
+- **Wiping everything.** To clear all collections at once, remove the whole
+  on-disk store: `Remove-Item -Recurse $env:USERPROFILE\.local_pdf_rag_mcp`
+  (PowerShell) or `rm -rf ~/.local_pdf_rag_mcp` (bash). Then re-ingest.
 - **Switching embedding models** changes the vector space, so it also
   invalidates existing vectors — same wipe-and-re-ingest applies.
 - **Shared store.** The uvx-launched MCP server and any direct

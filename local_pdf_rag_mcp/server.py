@@ -82,6 +82,26 @@ def list_collections() -> str:
 
 
 @mcp.tool()
+def delete_collection(collection: str) -> str:
+    """Delete a named collection and all its chunks. This is irreversible.
+
+    Use this to rebuild a single collection — e.g. after improving extraction
+    or switching embedding models — without wiping unrelated collections.
+    Confirm with the user before calling: the chunks cannot be recovered
+    without re-ingesting the source PDF.
+
+    Args:
+        collection: Name of the collection to delete.
+    """
+    if _store.delete_collection(collection):
+        return f"Deleted collection '{collection}'."
+    return (
+        f"No collection named '{collection}'. "
+        f"Use list_collections to see what's indexed."
+    )
+
+
+@mcp.tool()
 def search(query: str, collection: str = "default", top_k: int = 8) -> str:
     """Search a collection and return the most relevant chunks with citations.
 
