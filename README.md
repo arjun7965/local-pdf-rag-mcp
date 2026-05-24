@@ -28,7 +28,11 @@ does **not** generate answers itself, which keeps it simple and model-agnostic.
 ## Requirements
 
 - Python 3.10+
-- ~100 MB disk for the default embedding model (downloaded on first run)
+- ~170 MB disk for the two default models, downloaded automatically and
+  cached: the embedding model (~80 MB, fetched on first ingest/search) and
+  the cross-encoder reranker (~80 MB, fetched on first search). Reranking
+  can be turned off with `PDF_RAG_RERANK=0` if you'd rather skip the
+  second download.
 
 ## Install
 
@@ -40,10 +44,19 @@ pip install -e .
 
 ## Register with Claude Code
 
-Add the server to Claude Code:
+If you installed it (the `pip install -e .` above), point Claude Code at the
+console command:
 
 ```bash
 claude mcp add pdf-rag -- local-pdf-rag-mcp
+```
+
+Or run it straight from GitHub without cloning, using
+[uv](https://docs.astral.sh/uv/)'s `uvx` — it fetches and caches the package
+on first launch:
+
+```bash
+claude mcp add pdf-rag -- uvx --from git+https://github.com/arjun7965/local-pdf-rag-mcp.git local-pdf-rag-mcp
 ```
 
 Or add it manually to your MCP config:
@@ -62,7 +75,7 @@ Restart Claude Code so it picks up the new server.
 
 ## Usage
 
-The server exposes three tools. In practice you just talk to Claude and it
+The server exposes four tools. In practice you just talk to Claude and it
 calls them for you:
 
 > **You:** Ingest the spec at ~/docs/pcie-5.0.pdf into a collection called "pcie".
