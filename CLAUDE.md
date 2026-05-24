@@ -50,8 +50,8 @@ These were settled with the user — do not relitigate without asking:
 - `local_pdf_rag_mcp/server.py` — the FastMCP server. Three tools:
   - `ingest_pdf(path, collection="default")` — file or folder of PDFs.
   - `list_collections()` — names + chunk counts.
-  - `search(query, collection="default", top_k=5)` — top chunks with
-    `source, p.N` citations.
+  - `search(query, collection="default", top_k=8)` — top chunks with
+    `source, p.N` citations (reranked from ~20 candidates).
 - `pyproject.toml` — pinned deps (`mcp`, `chromadb`, `sentence-transformers`,
   `pdfplumber`); console entry point `local-pdf-rag-mcp = local_pdf_rag_mcp.server:main`.
 - `README.md`, `LICENSE` (MIT), `.gitignore`.
@@ -59,10 +59,12 @@ These were settled with the user — do not relitigate without asking:
 ## Current state
 
 - All modules compile cleanly; chunker has a pytest suite (see "Testing notes").
-- NOT yet run end-to-end with the real ChromaDB / sentence-transformers / mcp
-  stack — those pull large models and weren't installed in the build env.
+- Verified end-to-end: ingest → embed → rerank → search confirmed on a real
+  PDF (bitcoin_as_macro.pdf, 21 pages → 71 chunks) with sensible, well-ranked
+  results.
 - Published at https://github.com/arjun7965/local-pdf-rag-mcp; `main` tracks
-  `origin/main`.
+  `origin/main`. Registered with Claude Code as an MCP server via
+  `uvx --from git+<repo>.git local-pdf-rag-mcp`.
 
 ## What's been verified
 
@@ -92,13 +94,40 @@ These were settled with the user — do not relitigate without asking:
   set to 250 to sit just under that. If you swap the embedding model,
   retune `target_tokens` to the new model's window.
 
-## Next steps / open questions
+## Re-ingesting and refreshing the deployed server
 
-Immediate:
-1. **Smoke test on a real machine:** `pip install -e .`, ingest any PDF,
-   confirm `search` returns sensible chunks. This is the main untested path —
-   the unit tests cover chunking but not the full ChromaDB / embeddings / MCP
-   stack.
+When you change extraction, chunking, or the embedding model, existing
+ChromaDB collections keep their old representation — vectors don't
+auto-update. A collection embeds and stores chunks at ingest time, so a
+new parser, a different `target_tokens`, or a swapped embedding model only
+affects *future* ingests. To benefit from such a change you must rebuild
+the affected collections.
+
+- **Wiping the store.** There is no per-collection delete tool yet, so a
+  clean rebuild means removing the whole on-disk store:
+  `Remove-Item -Recurse $env:USERPROFILE\.local_pdf_rag_mcp` (PowerShell)
+  or `rm -rf ~/.local_pdf_rag_mcp` (bash). Then re-ingest.
+- **Switching embedding models** changes the vector space, so it also
+  invalidates existing vectors — same wipe-and-re-ingest applies.
+- **Shared store.** The uvx-launched MCP server and any direct
+  `VectorStore()` call (e.g. the venv used for smoke tests) read/write the
+  same `~/.local_pdf_rag_mcp/chroma`, so a collection ingested from one is
+  visible to the other.
+
+Deploying code changes to the Claude Code MCP server (registered as
+`uvx --from git+<repo>.git@main local-pdf-rag-mcp`):
+
+- After pushing to `main`, uvx may reuse a stale cached env. Force a
+  one-time rebuild, then restart Claude Code:
+  `echo "" | uvx --refresh --from git+<repo>.git local-pdf-rag-mcp`
+  (the piped empty string EOFs the stdio server so it builds the env and
+  exits instead of hanging). Prefer this over `uv cache clean`, which
+  nukes the entire uv cache.
+- Or pin a commit SHA in the registration (`...@<sha>`) for reproducibility
+  and to stop the server picking up untested commits; bump the SHA when you
+  want it to move forward.
+
+## Next steps / open questions
 
 Possible v2 (user was asked, hasn't decided):
 - **Table-aware extraction.** Current chunking flattens tables and register
