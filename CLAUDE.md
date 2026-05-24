@@ -32,12 +32,14 @@ These were settled with the user — do not relitigate without asking:
 
 ## Architecture
 
-- `local_pdf_rag_mcp/chunking.py` — page-aware PDF text extraction (`pypdf`) and
-  token-budgeted, paragraph-respecting chunking. Chunks never span pages, so
-  each carries an unambiguous page number for citations. Oversized paragraphs
-  are split by sentence, then by a hard character budget as a last resort.
-  Overlap is carried as a bounded trailing text slice (NOT whole units — see
-  "Known gotchas").
+- `local_pdf_rag_mcp/chunking.py` — page-aware PDF text extraction (`pdfplumber`)
+  and token-budgeted, paragraph-respecting chunking. Chunks never span pages,
+  so each carries an unambiguous page number for citations. Oversized
+  paragraphs are split by sentence, then by a hard character budget as a last
+  resort. Overlap is carried as a bounded trailing text slice (NOT whole
+  units — see "Known gotchas"). Chose `pdfplumber` (MIT, on pdfminer.six)
+  over `pymupdf` (AGPL-3.0) to keep the project's MIT license clean for
+  downstream users.
 - `local_pdf_rag_mcp/store.py` — `VectorStore`, a thin wrapper over a persistent
   ChromaDB client with a local embedding function. Handles add/search/list and
   batches inserts (256) to bound memory on large docs. `search` over-fetches
@@ -51,7 +53,7 @@ These were settled with the user — do not relitigate without asking:
   - `search(query, collection="default", top_k=5)` — top chunks with
     `source, p.N` citations.
 - `pyproject.toml` — pinned deps (`mcp`, `chromadb`, `sentence-transformers`,
-  `pypdf`); console entry point `local-pdf-rag-mcp = local_pdf_rag_mcp.server:main`.
+  `pdfplumber`); console entry point `local-pdf-rag-mcp = local_pdf_rag_mcp.server:main`.
 - `README.md`, `LICENSE` (MIT), `.gitignore`.
 
 ## Current state

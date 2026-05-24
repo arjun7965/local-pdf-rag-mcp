@@ -4,6 +4,14 @@ Extraction is page-aware so every chunk can carry the page number it came
 from, which is what makes citations possible. Chunking is paragraph-aware
 with token-budgeted packing and overlap, so we avoid cutting sentences in
 half while keeping chunks small enough to stay token-cheap at query time.
+
+Text extraction uses pdfplumber (MIT, built on pdfminer.six) rather than
+pypdf. On real-world PDFs with multi-column layouts, footnotes, justified
+text, or unusual character spacing — common in research papers and
+specs — pdfplumber preserves word boundaries and reading order much more
+reliably, which directly improves what the embedder can match against.
+PyMuPDF would be slightly faster but is AGPL-3.0, which would impose
+copyleft constraints on anyone consuming this MIT-licensed server.
 """
 
 from __future__ import annotations
@@ -12,7 +20,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import pypdf
+import pdfplumber
+from pdfminer.pdfdocument import PDFPasswordIncorrect
 
 
 @dataclass
@@ -37,26 +46,26 @@ def extract_pages(pdf_path: Path) -> list[str]:
     image-only / scanned PDFs that yield no extractable text (OCR is out
     of scope for v1).
     """
+    # pdfplumber tries the empty password automatically, so a PDF that's
+    # "encrypted" with no real password just opens.
     try:
-        reader = pypdf.PdfReader(str(pdf_path))
-    except Exception as exc:  # pypdf raises a variety of types
+        pdf = pdfplumber.open(str(pdf_path))
+    except PDFPasswordIncorrect as exc:
+        raise PdfExtractionError(
+            f"{pdf_path.name} is encrypted and requires a password."
+        ) from exc
+    except Exception as exc:
         raise PdfExtractionError(f"Could not open {pdf_path.name}: {exc}") from exc
 
-    if reader.is_encrypted:
-        # Try the empty-password path; many "encrypted" PDFs open with it.
-        try:
-            reader.decrypt("")
-        except Exception as exc:
-            raise PdfExtractionError(
-                f"{pdf_path.name} is encrypted and requires a password."
-            ) from exc
-
-    pages = []
-    for page in reader.pages:
-        try:
-            pages.append(page.extract_text() or "")
-        except Exception:
-            pages.append("")
+    pages: list[str] = []
+    try:
+        for page in pdf.pages:
+            try:
+                pages.append(page.extract_text() or "")
+            except Exception:
+                pages.append("")
+    finally:
+        pdf.close()
 
     if not any(p.strip() for p in pages):
         raise PdfExtractionError(
