@@ -39,7 +39,12 @@ These were settled with the user — do not relitigate without asking:
   resort. Overlap is carried as a bounded trailing text slice (NOT whole
   units — see "Known gotchas"). Chose `pdfplumber` (MIT, on pdfminer.six)
   over `pymupdf` (AGPL-3.0) to keep the project's MIT license clean for
-  downstream users.
+  downstream users. Internals are unified on a `Segment` abstraction (prose
+  or table); `chunk_pages` wraps each page as a single prose segment, so the
+  default path is unchanged. Opt-in table-aware extraction (`PDF_RAG_TABLES=1`)
+  detects ruled tables, serializes them one record per row, interleaves them
+  with prose by vertical position, and tags those chunks `chunk_type="table"`.
+  Table chunks pack whole rows (never split mid-row) and carry no overlap.
 - `local_pdf_rag_mcp/store.py` — `VectorStore`, a thin wrapper over a persistent
   ChromaDB client with a local embedding function. Handles add/search/list and
   batches inserts (256) to bound memory on large docs. `search` over-fetches
@@ -75,6 +80,12 @@ These were settled with the user — do not relitigate without asking:
   page numbers always in range; no empty chunks.
 - The no-extractable-text path raises `PdfExtractionError` cleanly (so
   scanned/image-only PDFs fail loudly instead of indexing nothing).
+- Table-aware extraction (opt-in): a synthesized ruled table is serialized
+  one record per row (cells stay together, keyed by header), tagged
+  `chunk_type="table"`, and stays within the token budget. With the flag on
+  but no table detected, output is identical to the prose path — confirmed
+  on bitcoin_as_macro.pdf (21 pages → 71 prose chunks, 0 table segments,
+  same as flag-off).
 
 ## Known gotchas (hard-won — don't regress these)
 
@@ -133,11 +144,17 @@ Deploying code changes to the Claude Code MCP server (registered as
 
 ## Next steps / open questions
 
+In progress:
+- **Table-aware extraction — implemented, behind `PDF_RAG_TABLES=1` (default
+  off).** Decisions locked with the user: row-as-record serialization, keep
+  the "never cross a page" invariant (no header-carry across page breaks),
+  opt-in flag during the trial. Remaining before flipping the default on:
+  validate on a table-heavy real PDF (the bitcoin doc has no tables, so it
+  only exercised the fallback). Out of scope: merged/nested cells, spanning
+  headers, scanned-image tables. Once proven, flip the default and delete
+  the flag.
+
 Possible v2 (user was asked, hasn't decided):
-- **Table-aware extraction.** Current chunking flattens tables and register
-  layouts into plain text — fine for prose, lossy for dense technical specs
-  like PCIe. Real table-structure extraction needs a heavier parser. Document
-  as a known limitation; natural v2 if the repo gets traction.
 - Optional OCR path for scanned PDFs (currently explicitly out of scope).
 
 ## Testing notes

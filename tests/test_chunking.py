@@ -10,11 +10,15 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from reportlab.lib import colors
 from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
 from local_pdf_rag_mcp.chunking import (
     PdfExtractionError,
+    chunk_page_segments,
     chunk_pages,
+    extract_page_segments,
     extract_pages,
 )
 
@@ -29,6 +33,14 @@ def _write_pdf(path: Path, pages: list[str]) -> None:
             c.drawText(text_obj)
         c.showPage()
     c.save()
+
+
+def _write_table_pdf(path: Path, header: list[str], rows: list[list[str]]) -> None:
+    """Render a ruled table so pdfplumber's line-based detection finds it."""
+    doc = SimpleDocTemplate(str(path))
+    table = Table([header] + rows)
+    table.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 1, colors.black)]))
+    doc.build([table])
 
 
 _PARA = (
@@ -91,3 +103,51 @@ def test_extract_pages_raises_on_no_text(tmp_path: Path) -> None:
     _write_pdf(pdf, ["", ""])
     with pytest.raises(PdfExtractionError):
         extract_pages(pdf)
+
+
+def test_chunk_pages_tags_chunks_as_prose() -> None:
+    chunks = chunk_pages(_long_pages(), source="synthetic.pdf")
+    assert chunks
+    assert all(c.chunk_type == "prose" for c in chunks)
+
+
+# --- Table-aware extraction (PDF_RAG_TABLES path) ---
+
+
+def test_table_extraction_preserves_rows(tmp_path: Path) -> None:
+    pdf = tmp_path / "table.pdf"
+    _write_table_pdf(
+        pdf,
+        ["Field", "Bits", "Description"],
+        [["Foo", "0-3", "the foo field"], ["Bar", "4-7", "the bar field"]],
+    )
+    page_segments = extract_page_segments(pdf)
+    chunks = chunk_page_segments(page_segments, source="table.pdf")
+
+    table_chunks = [c for c in chunks if c.chunk_type == "table"]
+    assert table_chunks, "expected at least one table chunk"
+
+    joined = "\n".join(c.text for c in table_chunks)
+    # Each row's cells stay together as a record, keyed by the header.
+    assert "Field: Foo" in joined and "Bits: 0-3" in joined
+    assert "Field: Bar" in joined and "Bits: 4-7" in joined
+
+
+def test_table_chunks_respect_token_budget(tmp_path: Path) -> None:
+    pdf = tmp_path / "bigtable.pdf"
+    rows = [[f"Row{i}", f"{i}-{i + 1}", f"description number {i}"] for i in range(40)]
+    _write_table_pdf(pdf, ["Field", "Bits", "Description"], rows)
+    page_segments = extract_page_segments(pdf)
+    chunks = chunk_page_segments(
+        page_segments, source="bigtable.pdf", target_tokens=120, overlap_tokens=30
+    )
+    assert chunks
+    sizes = [len(c.text) // 4 for c in chunks]
+    assert max(sizes) <= 120 * 1.4, f"table chunk over budget: {max(sizes)}"
+
+
+def test_extract_page_segments_raises_on_no_text(tmp_path: Path) -> None:
+    pdf = tmp_path / "blank.pdf"
+    _write_pdf(pdf, ["", ""])
+    with pytest.raises(PdfExtractionError):
+        extract_page_segments(pdf)

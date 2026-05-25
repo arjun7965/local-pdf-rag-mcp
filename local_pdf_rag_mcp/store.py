@@ -77,7 +77,12 @@ class VectorStore:
         ids = [f"{c.source}::{c.chunk_index}" for c in chunks]
         documents = [c.text for c in chunks]
         metadatas = [
-            {"source": c.source, "page": c.page, "chunk_index": c.chunk_index}
+            {
+                "source": c.source,
+                "page": c.page,
+                "chunk_index": c.chunk_index,
+                "chunk_type": c.chunk_type,
+            }
             for c in chunks
         ]
         # Batch to keep memory bounded on large docs.

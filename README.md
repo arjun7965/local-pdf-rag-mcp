@@ -104,7 +104,20 @@ Environment variables:
 | `PDF_RAG_EMBED_MODEL` | `all-MiniLM-L6-v2` | Any sentence-transformers model name. |
 | `PDF_RAG_RERANK_MODEL` | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder used to rerank vector hits. |
 | `PDF_RAG_RERANK` | `1` | Set to `0` to skip reranking and use raw vector ranking. |
+| `PDF_RAG_TABLES` | `0` | Set to `1` to enable table-aware extraction (see below). |
 | `PDF_RAG_DB_PATH` | `~/.local_pdf_rag_mcp/chroma` | Where the vector store lives on disk. |
+
+### Table-aware extraction (opt-in)
+
+By default, text is extracted linearly — tables get flattened into prose,
+which scatters a row's cells and hurts retrieval on dense technical docs.
+Set `PDF_RAG_TABLES=1` to detect ruled tables and serialize them one record
+per row (`Field: Foo; Bits: 0-3; Description: ...`), so a query about a
+single row matches that row's record directly. Detection is conservative
+(it relies on ruling lines, so whitespace-aligned prose isn't misread as a
+table), and any page with no detected table falls back to the normal prose
+path. Re-ingest after enabling, since the change only affects future
+ingests.
 
 ### Embedding model
 

@@ -17,7 +17,14 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
-from .chunking import PdfExtractionError, chunk_pages, extract_pages
+from .chunking import (
+    PdfExtractionError,
+    chunk_page_segments,
+    chunk_pages,
+    extract_page_segments,
+    extract_pages,
+    tables_enabled,
+)
 from .store import VectorStore
 
 mcp = FastMCP("pdf-rag")
@@ -25,10 +32,16 @@ _store = VectorStore()
 
 
 def _ingest_one(pdf_path: Path, collection: str) -> dict:
-    pages = extract_pages(pdf_path)
-    chunks = chunk_pages(pages, source=pdf_path.name)
+    if tables_enabled():
+        page_segments = extract_page_segments(pdf_path)
+        chunks = chunk_page_segments(page_segments, source=pdf_path.name)
+        n_pages = len(page_segments)
+    else:
+        pages = extract_pages(pdf_path)
+        chunks = chunk_pages(pages, source=pdf_path.name)
+        n_pages = len(pages)
     added = _store.add_chunks(collection, chunks)
-    return {"file": pdf_path.name, "pages": len(pages), "chunks_added": added}
+    return {"file": pdf_path.name, "pages": n_pages, "chunks_added": added}
 
 
 @mcp.tool()
