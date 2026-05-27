@@ -150,6 +150,11 @@ around it:
   cost of more disk, more RAM, and slower embedding. Switching models
   invalidates any existing vectors — delete `~/.local_pdf_rag_mcp/chroma`
   and re-ingest.
+- **Offline / quiet operation.** Both models are cached after first use (in
+  `~/.cache/huggingface`). To run fully offline afterward — and silence the
+  `Warning: You are sending unauthenticated requests to the HF Hub` message —
+  set `HF_HUB_OFFLINE=1`. Unset it temporarily if you switch to a model you
+  haven't downloaded yet, since offline mode blocks new fetches.
 
 ## Limitations
 
