@@ -119,6 +119,14 @@ table), and any page with no detected table falls back to the normal prose
 path. Re-ingest after enabling, since the change only affects future
 ingests.
 
+**Only ruled tables are detected.** Because detection requires visible grid
+lines, *borderless* tables — columns aligned by whitespace with no ruling
+lines — are not recognized and fall back to the prose path, where their
+cells get flattened into linear text. This is a deliberate tradeoff:
+alignment-based detection would catch borderless tables but also misreads
+ordinary prose layouts as tables, shredding them into junk cells. If your
+documents rely on borderless tables, `PDF_RAG_TABLES` won't help with them.
+
 ### Embedding model
 
 The default is `all-MiniLM-L6-v2` and the rest of the project is tuned
@@ -148,6 +156,10 @@ around it:
 - **No OCR.** Scanned or image-only PDFs have no extractable text; the server
   detects this and returns a clear error rather than indexing nothing.
 - **Encrypted PDFs** open only if they use an empty password.
+- **Borderless tables.** Even with `PDF_RAG_TABLES=1`, only tables with
+  visible grid/border lines are detected. Whitespace-aligned tables are
+  flattened into prose like any other text (see Configuration → Table-aware
+  extraction).
 - **Embedding input cap.** Chunks longer than the embedding model's
   `max_seq_length` (256 tokens for the default MiniLM) are silently
   truncated by sentence-transformers — the full text is still stored and

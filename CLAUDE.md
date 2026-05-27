@@ -106,6 +106,13 @@ These were settled with the user — do not relitigate without asking:
   MiniLM caps at 256 tokens, so the chunker's `target_tokens` default is
   set to 250 to sit just under that. If you swap the embedding model,
   retune `target_tokens` to the new model's window.
+- **Left-margin watermarks pollute extraction.** Some PDFs (e.g. the
+  CapitalFlows research docs) print a vertical watermark of single letters
+  down the left margin; pdfplumber interleaves those letters into each line
+  of extracted text (you'll see stray `C`, `m`, `o`, ... at line starts).
+  Not currently stripped — it degrades prose chunks and would also corrupt
+  any table extraction on those pages. Fixing it means dropping characters
+  in a thin left-margin band before extraction; deferred, not yet done.
 
 ## Re-ingesting and refreshing the deployed server
 
@@ -144,15 +151,23 @@ Deploying code changes to the Claude Code MCP server (registered as
 
 ## Next steps / open questions
 
-In progress:
-- **Table-aware extraction — implemented, behind `PDF_RAG_TABLES=1` (default
-  off).** Decisions locked with the user: row-as-record serialization, keep
-  the "never cross a page" invariant (no header-carry across page breaks),
-  opt-in flag during the trial. Remaining before flipping the default on:
-  validate on a table-heavy real PDF (the bitcoin doc has no tables, so it
-  only exercised the fallback). Out of scope: merged/nested cells, spanning
-  headers, scanned-image tables. Once proven, flip the default and delete
-  the flag.
+Table-aware extraction (status):
+- **Implemented, behind `PDF_RAG_TABLES=1` (default off).** Row-as-record
+  serialization, "never cross a page" invariant (no header-carry across page
+  breaks), ruling-line detection.
+- **Accepted limitation (documented): ruled tables only.** Detection needs
+  visible grid lines. Borderless / whitespace-aligned tables are NOT detected
+  and fall back to flattened prose. Confirmed on rates_playbook p.38 — a
+  borderless "Market Regime" matrix flattened into scrambled prose; the line
+  detector correctly skipped it. The text-alignment strategy *would* catch it
+  but also "detects" a table on every prose page (e.g. shredding title pages
+  into junk cells like `['U.S. I','nter','est R',...]`), so it's not a safe
+  global switch. Decision (user, 2026-05-26): keep line-based detection,
+  document the limitation, do NOT chase borderless tables for now.
+- **Still unvalidated:** serialization against a real *ruled*-table PDF — only
+  synthetic reportlab tables tested so far. Keep opt-in until a real
+  ruled-table doc confirms it; only then flip the default and delete the flag.
+- Out of scope: merged/nested cells, spanning headers, scanned-image tables.
 
 Possible v2 (user was asked, hasn't decided):
 - Optional OCR path for scanned PDFs (currently explicitly out of scope).
