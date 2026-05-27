@@ -142,6 +142,12 @@ around it:
   `BAAI/bge-large-en-v1.5` at 512), consider raising `target_tokens` in
   `chunk_pages` to match — otherwise you're paying for capacity you don't
   use.
+- **Output: a 384-dim vector.** Each chunk embeds to a fixed
+  384-dimensional vector regardless of its length (the model produces a
+  vector, not text, so there's no output-token limit). ChromaDB infers this
+  dimensionality automatically; a different model with a different size just
+  works, but mixing vectors of different sizes in one collection does not —
+  re-ingest after switching models.
 - **Swapping.** Any sentence-transformers model from HuggingFace works:
   ```bash
   PDF_RAG_EMBED_MODEL=BAAI/bge-large-en-v1.5 local-pdf-rag-mcp
