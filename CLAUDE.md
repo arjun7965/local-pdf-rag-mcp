@@ -106,13 +106,18 @@ These were settled with the user — do not relitigate without asking:
   MiniLM caps at 256 tokens, so the chunker's `target_tokens` default is
   set to 250 to sit just under that. If you swap the embedding model,
   retune `target_tokens` to the new model's window.
-- **Left-margin watermarks pollute extraction.** Some PDFs (e.g. the
-  CapitalFlows research docs) print a vertical watermark of single letters
-  down the left margin; pdfplumber interleaves those letters into each line
-  of extracted text (you'll see stray `C`, `m`, `o`, ... at line starts).
-  Not currently stripped — it degrades prose chunks and would also corrupt
-  any table extraction on those pages. Fixing it means dropping characters
-  in a thin left-margin band before extraction; deferred, not yet done.
+- **Oversized watermarks pollute extraction (handled by `_dewatermark`).**
+  Some PDFs (e.g. the CapitalFlows research docs) carry a large decorative
+  watermark — a diagonal `CapitalFlowsResearch.com` rendered at 44–65pt vs
+  11pt body — whose letters pdfplumber interleaves into the extracted text,
+  corrupting chunks. `_dewatermark` drops chars whose size is ≥ 3× the page's
+  modal (body) size before extraction; it's a no-op when no outlier-sized
+  text exists (ordinary PDFs untouched) and backs off when oversized text is
+  common (so a genuine cover/title page isn't gutted). Runs on both the prose
+  and table paths. NB: it keys on font *size*, not position — the watermark
+  is diagonal/scattered, not a left-margin column (an earlier guess that
+  proved wrong). Tune `_WATERMARK_SIZE_RATIO` / `_WATERMARK_MAX_FRACTION` if a
+  doc's watermark sits closer to body size.
 
 ## Re-ingesting and refreshing the deployed server
 

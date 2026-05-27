@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import os
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -88,6 +89,40 @@ def _no_text_error(pdf_path: Path) -> PdfExtractionError:
     )
 
 
+# A decorative watermark is rendered far larger than body text. These bound
+# the heuristic that strips it before extraction.
+_WATERMARK_SIZE_RATIO = 3.0      # a char is watermark if size >= ratio x modal size
+_WATERMARK_MAX_FRACTION = 0.15   # ...unless such chars are common, in which case
+                                 # the page is genuinely large-text (e.g. a cover)
+
+
+def _dewatermark(page):
+    """Return the page with oversized watermark characters removed.
+
+    Decorative watermarks (e.g. a diagonal 'CapitalFlowsResearch.com' across
+    the page) render much larger than body text, and pdfplumber interleaves
+    their letters into the extracted text, corrupting chunks. We drop chars
+    whose size is a large multiple of the page's modal (body) size. This is a
+    no-op when there are no outlier-sized chars, so ordinary PDFs are
+    unaffected, and it backs off when oversized text is common so a genuine
+    cover/title page isn't gutted. Non-char objects (the ruling lines table
+    detection needs) are always kept.
+    """
+    chars = page.chars
+    if not chars:
+        return page
+    modal = Counter(round(c["size"], 1) for c in chars).most_common(1)[0][0]
+    if modal <= 0:
+        return page
+    threshold = modal * _WATERMARK_SIZE_RATIO
+    oversized = sum(1 for c in chars if c.get("size", 0) >= threshold)
+    if oversized == 0 or oversized > len(chars) * _WATERMARK_MAX_FRACTION:
+        return page
+    return page.filter(
+        lambda obj: obj.get("object_type") != "char" or obj.get("size", 0) < threshold
+    )
+
+
 def extract_pages(pdf_path: Path) -> list[str]:
     """Return a list of page texts (1 entry per page).
 
@@ -100,7 +135,7 @@ def extract_pages(pdf_path: Path) -> list[str]:
     try:
         for page in pdf.pages:
             try:
-                pages.append(page.extract_text() or "")
+                pages.append(_dewatermark(page).extract_text() or "")
             except Exception:
                 pages.append("")
     finally:
@@ -188,10 +223,14 @@ def extract_page_segments(pdf_path: Path) -> list[list[Segment]]:
     try:
         for page in pdf.pages:
             try:
-                pages_segments.append(_segment_page(page))
+                clean = _dewatermark(page)
+            except Exception:
+                clean = page
+            try:
+                pages_segments.append(_segment_page(clean))
             except Exception:
                 try:
-                    pages_segments.append([Segment("prose", page.extract_text() or "")])
+                    pages_segments.append([Segment("prose", clean.extract_text() or "")])
                 except Exception:
                     pages_segments.append([Segment("prose", "")])
     finally:

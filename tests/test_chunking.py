@@ -43,6 +43,20 @@ def _write_table_pdf(path: Path, header: list[str], rows: list[list[str]]) -> No
     doc.build([table])
 
 
+def _write_watermarked_pdf(path: Path, body_lines: list[str], mark: str) -> None:
+    """Body text at 11pt plus one oversized (60pt) watermark glyph."""
+    c = canvas.Canvas(str(path))
+    c.setFont("Helvetica", 11)
+    text_obj = c.beginText(72, 700)
+    for line in body_lines:
+        text_obj.textLine(line)
+    c.drawText(text_obj)
+    c.setFont("Helvetica", 60)
+    c.drawString(250, 400, mark)
+    c.showPage()
+    c.save()
+
+
 _PARA = (
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
     "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
@@ -151,3 +165,23 @@ def test_extract_page_segments_raises_on_no_text(tmp_path: Path) -> None:
     _write_pdf(pdf, ["", ""])
     with pytest.raises(PdfExtractionError):
         extract_page_segments(pdf)
+
+
+def test_extract_strips_oversized_watermark(tmp_path: Path) -> None:
+    pdf = tmp_path / "wm.pdf"
+    _write_watermarked_pdf(
+        pdf, ["Body text line one here.", "Body text line two here."], mark="Z"
+    )
+    text = extract_pages(pdf)[0]
+    assert "Body text line one" in text
+    assert "Body text line two" in text
+    # The 60pt watermark glyph is dropped; body (11pt) survives.
+    assert "Z" not in text
+
+
+def test_extract_keeps_text_when_no_watermark(tmp_path: Path) -> None:
+    # No oversized glyphs -> dewatermark is a no-op, body unchanged.
+    pdf = tmp_path / "plain.pdf"
+    _write_pdf(pdf, ["Ordinary page with normal sized text only."])
+    text = extract_pages(pdf)[0]
+    assert "Ordinary page with normal sized text only" in text
