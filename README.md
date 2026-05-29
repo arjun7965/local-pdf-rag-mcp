@@ -1,5 +1,7 @@
 # local-pdf-rag-mcp
 
+[![CI](https://github.com/arjun7965/local-pdf-rag-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/arjun7965/local-pdf-rag-mcp/actions/workflows/ci.yml)
+
 A fully-local [MCP](https://modelcontextprotocol.io) server that lets Claude
 (or any MCP client) answer questions over your PDFs. Point it at a PDF, ask
 questions in plain language, and the model fetches only the relevant passages
