@@ -6,6 +6,30 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Arjun Vinod" }]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "rag",
+    "pdf",
+    "chromadb",
+    "sentence-transformers",
+    "embeddings",
+    "retrieval",
+    "local-first",
+    "claude",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Indexing",
+]
 dependencies = [
     "mcp>=1.2.0",
     "chromadb>=0.5.0",
@@ -18,6 +42,11 @@ dev = [
     "pytest>=8.0",
     "reportlab>=4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/arjun7965/local-pdf-rag-mcp"
+Repository = "https://github.com/arjun7965/local-pdf-rag-mcp"
+Issues = "https://github.com/arjun7965/local-pdf-rag-mcp/issues"
 
 [project.scripts]
 local-pdf-rag-mcp = "local_pdf_rag_mcp.server:main"
