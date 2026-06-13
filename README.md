@@ -44,6 +44,40 @@ cd local-pdf-rag-mcp
 pip install -e .
 ```
 
+## Register with Codex
+
+If you installed it with `pip install -e .`, register the console command:
+
+```bash
+codex mcp add pdf-rag -- local-pdf-rag-mcp
+```
+
+Or run it straight from GitHub without cloning, using
+[uv](https://docs.astral.sh/uv/)'s `uvx`:
+
+```bash
+codex mcp add pdf-rag -- uvx --from git+https://github.com/arjun7965/local-pdf-rag-mcp.git local-pdf-rag-mcp
+```
+
+Verify the registration:
+
+```bash
+codex mcp get pdf-rag
+```
+
+Codex CLI and the Codex IDE extension share MCP configuration. To configure
+the server manually, add this to `~/.codex/config.toml`, or to
+`.codex/config.toml` for a trusted project:
+
+```toml
+[mcp_servers.pdf-rag]
+command = "local-pdf-rag-mcp"
+```
+
+Start a new Codex session after registering the server. In the Codex terminal
+UI, use `/mcp` to check that it is active. See the
+[Codex MCP documentation](https://developers.openai.com/codex/mcp).
+
 ## Register with Claude Code
 
 If you installed it (the `pip install -e .` above), point Claude Code at the
@@ -61,7 +95,7 @@ on first launch:
 claude mcp add pdf-rag -- uvx --from git+https://github.com/arjun7965/local-pdf-rag-mcp.git local-pdf-rag-mcp
 ```
 
-Or add it manually to your MCP config:
+Or add it manually to your Claude MCP config:
 
 ```json
 {
